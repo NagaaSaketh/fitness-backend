@@ -1,13 +1,13 @@
-import express from "express";
-import User from "../models/User.js";
-import { protect, generateToken } from "../middleware/auth.js";
+import express from 'express';
+import User from '../models/User.js';
+import { protect, generateToken } from '../middleware/auth.js';
 
 const router = express.Router();
 
 // @route   POST /api/auth/login
 // @desc    Login user
 // @access  Public
-router.post("/login", async (req, res, next) => {
+router.post('/login', async (req, res, next) => {
   try {
     const { email, password } = req.body;
 
@@ -15,17 +15,17 @@ router.post("/login", async (req, res, next) => {
     if (!email || !password) {
       return res.status(400).json({
         success: false,
-        message: "Please provide email and password",
+        message: 'Please provide email and password'
       });
     }
 
     // Find user and include password
-    const user = await User.findOne({ email }).select("+password");
+    const user = await User.findOne({ email }).select('+password');
 
     if (!user) {
       return res.status(401).json({
         success: false,
-        message: "Invalid credentials",
+        message: 'Invalid credentials'
       });
     }
 
@@ -33,7 +33,7 @@ router.post("/login", async (req, res, next) => {
     if (!user.isActive) {
       return res.status(401).json({
         success: false,
-        message: "Account is deactivated. Please contact admin.",
+        message: 'Account is deactivated. Please contact admin.'
       });
     }
 
@@ -43,31 +43,24 @@ router.post("/login", async (req, res, next) => {
     if (!isMatch) {
       return res.status(401).json({
         success: false,
-        message: "Invalid credentials",
+        message: 'Invalid credentials'
       });
     }
 
     // Generate token
     const token = generateToken(user._id);
 
-    // Set JWT as HTTP-only cookie
-    res.cookie("token", token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
-    });
-
-    // Respond without exposing token
     res.json({
       success: true,
       data: {
+        token,
         user: {
           id: user._id,
           name: user.name,
           email: user.email,
-          role: user.role,
-        },
-      },
+          role: user.role
+        }
+      }
     });
   } catch (error) {
     next(error);
@@ -77,7 +70,7 @@ router.post("/login", async (req, res, next) => {
 // @route   GET /api/auth/me
 // @desc    Get current logged in user
 // @access  Private
-router.get("/me", protect, async (req, res, next) => {
+router.get('/me', protect, async (req, res, next) => {
   try {
     const user = await User.findById(req.user._id);
 
@@ -88,8 +81,8 @@ router.get("/me", protect, async (req, res, next) => {
         name: user.name,
         email: user.email,
         role: user.role,
-        createdAt: user.createdAt,
-      },
+        createdAt: user.createdAt
+      }
     });
   } catch (error) {
     next(error);
@@ -99,32 +92,32 @@ router.get("/me", protect, async (req, res, next) => {
 // @route   PUT /api/auth/update-password
 // @desc    Update password
 // @access  Private
-router.put("/update-password", protect, async (req, res, next) => {
+router.put('/update-password', protect, async (req, res, next) => {
   try {
     const { currentPassword, newPassword } = req.body;
 
     if (!currentPassword || !newPassword) {
       return res.status(400).json({
         success: false,
-        message: "Please provide current and new password",
+        message: 'Please provide current and new password'
       });
     }
 
     if (newPassword.length < 6) {
       return res.status(400).json({
         success: false,
-        message: "New password must be at least 6 characters",
+        message: 'New password must be at least 6 characters'
       });
     }
 
-    const user = await User.findById(req.user._id).select("+password");
+    const user = await User.findById(req.user._id).select('+password');
 
     // Check current password
     const isMatch = await user.comparePassword(currentPassword);
     if (!isMatch) {
       return res.status(401).json({
         success: false,
-        message: "Current password is incorrect",
+        message: 'Current password is incorrect'
       });
     }
 
@@ -133,7 +126,7 @@ router.put("/update-password", protect, async (req, res, next) => {
 
     res.json({
       success: true,
-      message: "Password updated successfully",
+      message: 'Password updated successfully'
     });
   } catch (error) {
     next(error);
@@ -143,7 +136,7 @@ router.put("/update-password", protect, async (req, res, next) => {
 // @route   PUT /api/auth/update-profile
 // @desc    Update user profile
 // @access  Private
-router.put("/update-profile", protect, async (req, res, next) => {
+router.put('/update-profile', protect, async (req, res, next) => {
   try {
     const { name, email } = req.body;
 
@@ -151,23 +144,21 @@ router.put("/update-profile", protect, async (req, res, next) => {
     if (name) updateFields.name = name;
     if (email) {
       // Check if email is already taken
-      const existingUser = await User.findOne({
-        email,
-        _id: { $ne: req.user._id },
-      });
+      const existingUser = await User.findOne({ email, _id: { $ne: req.user._id } });
       if (existingUser) {
         return res.status(400).json({
           success: false,
-          message: "Email already in use",
+          message: 'Email already in use'
         });
       }
       updateFields.email = email;
     }
 
-    const user = await User.findByIdAndUpdate(req.user._id, updateFields, {
-      new: true,
-      runValidators: true,
-    });
+    const user = await User.findByIdAndUpdate(
+      req.user._id,
+      updateFields,
+      { new: true, runValidators: true }
+    );
 
     res.json({
       success: true,
@@ -175,8 +166,8 @@ router.put("/update-profile", protect, async (req, res, next) => {
         id: user._id,
         name: user.name,
         email: user.email,
-        role: user.role,
-      },
+        role: user.role
+      }
     });
   } catch (error) {
     next(error);
