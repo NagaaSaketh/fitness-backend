@@ -23,10 +23,10 @@ connectDB();
 // Middleware
 app.use(
   cors({
-    origin:
-      process.env.NODE_ENV === "production"
-        ? process.env.FRONTEND_URL
-        : "http://localhost:5173",
+    origin: [
+      "http://localhost:5173",
+      "https://fitness-frontend-hazel.vercel.app",
+    ],
     credentials: true,
   }),
 );
