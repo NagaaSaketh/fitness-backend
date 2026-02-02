@@ -5,8 +5,17 @@ export const protect = async (req, res, next) => {
   try {
     let token;
 
-    // Check for token in header
-    if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
+    // 1️⃣ Check cookie first
+    if (req.cookies && req.cookies.token) {
+      token = req.cookies.token;
+    }
+
+    // 2️⃣ Fallback to Authorization header
+    if (
+      !token &&
+      req.headers.authorization &&
+      req.headers.authorization.startsWith('Bearer')
+    ) {
       token = req.headers.authorization.split(' ')[1];
     }
 
@@ -17,54 +26,30 @@ export const protect = async (req, res, next) => {
       });
     }
 
-    try {
-      // Verify token
-      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-      // Get user from token
-      const user = await User.findById(decoded.id);
+    const user = await User.findById(decoded.id);
 
-      if (!user) {
-        return res.status(401).json({
-          success: false,
-          message: 'User not found'
-        });
-      }
-
-      if (!user.isActive) {
-        return res.status(401).json({
-          success: false,
-          message: 'User account is deactivated'
-        });
-      }
-
-      req.user = user;
-      next();
-    } catch (error) {
+    if (!user) {
       return res.status(401).json({
         success: false,
-        message: 'Token is invalid or expired'
+        message: 'User not found'
       });
     }
-  } catch (error) {
-    next(error);
-  }
-};
 
-export const admin = (req, res, next) => {
-  if (req.user && req.user.role === 'admin') {
+    if (!user.isActive) {
+      return res.status(401).json({
+        success: false,
+        message: 'User account is deactivated'
+      });
+    }
+
+    req.user = user;
     next();
-  } else {
-    res.status(403).json({
+  } catch (error) {
+    return res.status(401).json({
       success: false,
-      message: 'Admin access required'
+      message: 'Token is invalid or expired'
     });
   }
-};
-
-// Generate JWT Token
-export const generateToken = (id) => {
-  return jwt.sign({ id }, process.env.JWT_SECRET, {
-    expiresIn: process.env.JWT_EXPIRE || '7d'
-  });
 };
