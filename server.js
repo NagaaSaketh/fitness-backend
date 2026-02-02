@@ -24,7 +24,7 @@ connectDB();
 app.use(cors({
   origin: process.env.NODE_ENV === 'production'
     ? process.env.FRONTEND_URL
-    : 'https://fitrackify.vercel.app/',
+    : 'https://fitrackify.vercel.app',
   credentials: true
 }));
 app.use(express.json());
