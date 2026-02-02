@@ -48,7 +48,6 @@ router.post("/login", async (req, res, next) => {
     }
 
     // Generate token
-    // Generate token
     const token = generateToken(user._id);
 
     // Set JWT as HTTP-only cookie

@@ -53,3 +53,9 @@ export const protect = async (req, res, next) => {
     });
   }
 };
+
+export const generateToken = (id) => {
+  return jwt.sign({ id }, process.env.JWT_SECRET, {
+    expiresIn: process.env.JWT_EXPIRE || '7d',
+  });
+};
